@@ -11,8 +11,8 @@ public partial class MainWindow : Window
         new ImageSlide("Images/logo.jpg", 1200),
         new ListSlide(["Networking and Food", "Explain Problem", "Work In Pairs", "Present", "Pub"]),
         new ImageSlide("Images/ethos.jpg"),
-        new ListSlide(["Try a new language", "Practise TDD", "Try a new technique"]),
-        new UrlSlide("https://github.com/YorkCodeDojo/supermarket", 80),
+        new ListSlide(["Try a new language", "Embrace TDD", "Try a new technique"]),
+        new UrlSlide("https://github.com/YorkCodeDojo/supermarket", 60),
     ];
 
     private int _slideNumber = 0;
