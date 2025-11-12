@@ -1,3 +1,11 @@
+type ReceiptLine = {
+  name: string;
+  price: number;
+  discount: number;
+  quantity: number;
+  total: number;
+};
+
 export class Basket {
   products: Record<string, number>;
   private scannedItems: string[] = [];
@@ -13,13 +21,7 @@ export class Basket {
   generateReceipt() {
     const items = this.scannedItems.reduce(
       (
-        acc: Array<{
-          name: string;
-          price: number;
-          discount: number;
-          quantity: number;
-          total: number;
-        }>,
+        acc: Array<ReceiptLine>,
         item
       ) => {
         let existingItem = acc.find((i) => i.name === item);
@@ -44,40 +46,63 @@ export class Basket {
       },
       []
     );
-    items.forEach((item) => {
-      if (item.name === "Bread" && item.quantity % 3 === 0) {
-        item.discount = item.price * Math.floor(item.quantity / 3);
-      } else if (
-        item.name === "Eggs" &&
-        items.some((x) => x.name === "Bread")
-      ) {
-        item.discount = item.price;
-      }
-      item.total = item.total - item.discount;
-    });
 
-    if (
-      items.some((i) => i.name === "Sandwich") &&
-      items.some((i) => i.name === "Coke") &&
-      items.some((i) => i.name === "Apple")
-    ) {
-      const discount =
-        this.products["Sandwich"] +
-        this.products["Apple"] +
-        this.products["Coke"] -
-        4.95;
-        
-      items.push({
-        name: "meal deal",
-        discount: discount,
-        price: 0,
-        quantity: 1,
-        total: -discount,
-      });
-    }
+    const buyXGetOneFree = (name: string, amount: number) => {
+        return (items:ReceiptLine[] ) => {
+            items.forEach((item) => {
+                if (item.name === name && item.quantity >= amount) {
+                    const freeItems = Math.floor(item.quantity / amount);
+                    item.discount = item.price * freeItems;
+                    item.total = item.total - item.discount;
+                }
+            });
+        };
+    };
 
+    const buyOneItemGetAnotherFree = (name: string, freeItemName: string) => {
+        return (items:ReceiptLine[] ) => {
+            const hasItem = items.find((item) => item.name === name);
+            const freeItem = items.find((item) => item.name === freeItemName);
+            if (hasItem && freeItem) {
+                freeItem.discount = freeItem.price;
+                freeItem.total = freeItem.total - freeItem.discount;
+            }
+        };
+    };
+
+    const setPriceOffer = (names: string[], offerPrice: number) => {
+        return (items:ReceiptLine[] ) => {
+            const hasAllItems = names.every((name) =>
+                items.some((item) => item.name === name)
+            );  
+            if (hasAllItems) {
+                const totalOriginalPrice = names.reduce((sum, name) => {
+                    const item = items.find((i) => i.name === name);
+                    return sum + (item ? item.price : 0);
+                }, 0);
+
+                const discount = totalOriginalPrice - offerPrice;
+                items.push({
+                    name: "meal deal",
+                    discount: discount,
+                    price: 0,
+                    quantity: 1,
+                    total: -discount,
+                });
+            }
+
+        };
+    };
+    
+
+    const breadOffer = buyXGetOneFree("Bread", 3);
+    const eggsOffer = buyOneItemGetAnotherFree("Bread", "Eggs");
+    const mealDealOffer = setPriceOffer(["Sandwich", "Apple", "Coke"], 4.95);
+
+    const offers = [breadOffer, eggsOffer, mealDealOffer];
+    offers.forEach((offer) => offer(items));
+   
     const totalPrice = items.reduce((sum, item) => sum + item.total, 0);
 
-    return { lines: items, totalPrice };
-  }
+    return { lines: items, totalPrice };  }
 }
